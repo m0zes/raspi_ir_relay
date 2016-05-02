@@ -4,9 +4,9 @@
 * to do learn AJAXy things!
 * Control relays off a raspi with a webapp
 * Tie in IR controls
-..* read IR signals
-..* map those signals to be triggered with buttons on the webapp
-* Proof-of-Concept, and potentially enable other home automation fancies.
+  * read IR signals
+  * map those signals to be triggered with buttons on the webapp
+* Proof-of-Concept, and potentially enable other home automation fancies
 
 ### Eventually:
 * android app calling the api
@@ -21,7 +21,7 @@ expand its duties into a web-controlled universal remote for all my av equipment
 Parts have been ordered.
 
 ## Thanks
-IR components and schematics stolenborrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/
+IR components and schematics ~~stolen~~borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/
 
 ## BOM
 ### Adafruit
