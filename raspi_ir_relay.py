@@ -27,8 +27,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from flask import Flask, url_for, jsonify, make_response, render_template
+import os
 TESTING = True
 DEBUG = True
+REMOTE_CONF_DIR = 'remote_conf'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -38,6 +40,12 @@ if TESTING:
     import testingRELAYplate as RELAY
 else:
     import piplates.RELAYplate as RELAY
+
+if not os.path.isabs(REMOTE_CONF_DIR):
+    REMOTE_CONF_DIR = os.path.join(
+        os.path.dirname(__file__),
+        REMOTE_CONF_DIR
+    )
 
 
 def get_list_of_relay_plates():
@@ -68,6 +76,44 @@ def toggle_state_of_relay(plate_num, relay_num):
     RELAY.relayTOGGLE(plate_num, relay_num)
     relay_status = get_state_of_relays_on_plate(plate_num)
     return relay_status[relay_num]
+
+
+def get_list_of_remotes():
+    if not os.path.exists(REMOTE_CONF_DIR):
+        os.mkdir(REMOTE_CONF_DIR)
+    elif not os.path.isdir(REMOTE_CONF_DIR):
+        raise Exception("Incorrect REMOTE_CONF_DIR configuration")
+    remotes = []
+    for item in os.listdir(REMOTE_CONF_DIR):
+        if '.conf' not in item:
+            continue
+        remotes.append(item.split('.conf')[0])
+    return remotes
+
+
+def get_list_of_remote_buttons(remote_name):
+    conf_file = os.path.join(REMOTE_CONF_DIR, "{}.conf".format(remote_name))
+    buttons = []
+    with open(conf_file, 'r') as f:
+        started_codes = False
+        for line in f:
+            if 'begin codes' in line:
+                started_codes = True
+                continue
+            if not started_codes:
+                continue
+            if 'end codes' in line:
+                break
+            line = line.strip()
+            if '#' in line:
+                line, comment = line.split('#', 1)
+            else:
+                line = line.split()[0]
+                comment = line
+            buttons.append([line, comment.strip()])
+        else:
+            raise Exception("Malformed remote configuration")
+    return buttons
 
 
 @app.route('/')
@@ -116,7 +162,7 @@ def api_v1_plate_num(plate_num):
             )] = state
         return jsonify(**endpoints)
     except Exception as ex:
-        return make_response(jsonify(err=ex.message), 403)
+        return make_response(jsonify(err=str(ex)), 403)
 
 
 @app.route('/api/v1/plate/<int:plate_num>/<int:relay_num>')
@@ -127,7 +173,7 @@ def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
     try:
         relay_status = get_state_of_relays_on_plate(plate_num)
     except Exception as ex:
-        return make_response(jsonify(err=ex.message), 403)
+        return make_response(jsonify(err=str(ex)), 403)
     if relay_num not in relay_status.keys():
         return make_response(jsonify(err="Relay is invalid"), 403)
     curr_relay_state = relay_status[relay_num]
@@ -136,6 +182,53 @@ def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
             or state == 'toggle'):
         curr_relay_state = toggle_state_of_relay(plate_num, relay_num)
     return jsonify(state=curr_relay_state)
+
+
+@app.route('/api/v1/ir/macro/<macro_name>')
+@app.route('/api/v1/ir/macro/<macro_name>/<state>')
+def api_v1_ir_macro_name(macro_name, state=None):
+    if state not in ['pressed', 'on', None]:
+        return make_response(jsonify(err="State is invalid"), 403)
+    pass
+
+
+@app.route('/api/v1/ir/remote')
+def api_v1_ir_remote():
+    try:
+        remotelist = get_list_of_remotes()
+    except Exception as ex:
+        return make_response(jsonify(err=str(ex)), 403)
+    remotes = {}
+    for remote in remotelist:
+        remotes[url_for(
+            'api_v1_ir_remote_remote_name',
+            remote_name=remote
+        )] = remote
+    return jsonify(**remotes)
+
+
+@app.route('/api/v1/ir/remote/<remote_name>')
+def api_v1_ir_remote_remote_name(remote_name):
+    try:
+        buttonlist = get_list_of_remote_buttons(remote_name)
+    except Exception as ex:
+        return make_response(jsonify(err=str(ex)), 403)
+    buttons = {}
+    for button in buttonlist:
+        buttons[url_for(
+            'api_v1_ir_remote_remote_button',
+            remote=remote_name,
+            button=button[0]
+        )] = button[1]
+    return jsonify(**buttons)
+
+
+@app.route('/api/v1/ir/remote/<remote>/<button>')
+@app.route('/api/v1/ir/remote/<remote>/<button>/state')
+def api_v1_ir_remote_remote_button(remote, button, state=None):
+    if state not in ['pressed', 'on', None]:
+        return make_response(jsonify(err="State is invalid"), 403)
+    pass
 
 
 if __name__ == '__main__':
