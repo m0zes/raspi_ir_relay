@@ -26,11 +26,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from flask import Flask, url_for, jsonify, make_response, render_template
+from flask import Flask, url_for, jsonify, make_response, render_template, json
+import flask_from_url
 import os
+import subprocess
 TESTING = True
 DEBUG = True
-REMOTE_CONF_DIR = 'remote_conf'
+REMOTE_CONF_DIR = '/etc/lirc/lirc.conf.d'
+MACRO_CONF_DIR = 'macros'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -45,6 +48,12 @@ if not os.path.isabs(REMOTE_CONF_DIR):
     REMOTE_CONF_DIR = os.path.join(
         os.path.dirname(__file__),
         REMOTE_CONF_DIR
+    )
+
+if not os.path.isabs(MACRO_CONF_DIR):
+    MACRO_CONF_DIR = os.path.join(
+        os.path.dirname(__file__),
+        MACRO_CONF_DIR
     )
 
 
@@ -116,6 +125,28 @@ def get_list_of_remote_buttons(remote_name):
     return buttons
 
 
+def get_list_of_macros():
+    if not os.path.exists(MACRO_CONF_DIR):
+        os.mkdir(MACRO_CONF_DIR)
+    elif not os.path.isdir(MACRO_CONF_DIR):
+        raise Exception("Incorrect MACRO_CONF_DIR configuration")
+    macros = []
+    for item in os.listdir(MACRO_CONF_DIR):
+        if '.json' not in item:
+            continue
+        macros.append(item.split('.json')[0])
+    return macros
+
+
+def get_macro_definition(macro_name):
+    macrolist = get_list_of_macros()
+    macro_fn = "{}.json".format(macro_name)
+    if macro_fn not in macrolist:
+        raise Exception("Macro undefined")
+    with open(os.path.join(MACRO_CONF_DIR, macro_fn), 'r') as f:
+        return json.load(f)
+
+
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -168,14 +199,14 @@ def api_v1_plate_num(plate_num):
 @app.route('/api/v1/plate/<int:plate_num>/<int:relay_num>')
 @app.route('/api/v1/plate/<int:plate_num>/<int:relay_num>/<state>')
 def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
-    if state not in ['off', 'on', 'toggle', None]:
-        return make_response(jsonify(err="State is invalid"), 403)
     try:
         relay_status = get_state_of_relays_on_plate(plate_num)
     except Exception as ex:
         return make_response(jsonify(err=str(ex)), 403)
     if relay_num not in relay_status.keys():
         return make_response(jsonify(err="Relay is invalid"), 403)
+    if state not in ['off', 'on', 'toggle', None]:
+        return make_response(jsonify(err="State is invalid"), 403)
     curr_relay_state = relay_status[relay_num]
     if ((curr_relay_state == 'on' and state == 'off')
             or (curr_relay_state == 'off' and state == 'on')
@@ -184,12 +215,35 @@ def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
     return jsonify(state=curr_relay_state)
 
 
+@app.route('/api/v1/ir/macro')
+def api_v1_ir_macro():
+    try:
+        macrolist = get_list_of_macros()
+    except Exception as ex:
+        return make_response(jsonify(err=str(ex)), 403)
+    macros = {}
+    for macro in macrolist:
+        macros[url_for(
+            'api_v1_ir_macro_name',
+            macro_name=macro
+        )] = macro
+    return jsonify(**macros)
+
+
 @app.route('/api/v1/ir/macro/<macro_name>')
 @app.route('/api/v1/ir/macro/<macro_name>/<state>')
 def api_v1_ir_macro_name(macro_name, state=None):
+    try:
+        macro = get_macro_definition(macro_name)
+    except Exception as ex:
+        return make_response(jsonify(err=str(ex)), 403)
     if state not in ['pressed', 'on', None]:
         return make_response(jsonify(err="State is invalid"), 403)
-    pass
+    if state in ['pressed', 'on']:
+        for url in macro:
+            func, args = flask_from_url.from_url(url)
+            func(**args)
+    return jsonify()
 
 
 @app.route('/api/v1/ir/remote')
@@ -226,9 +280,26 @@ def api_v1_ir_remote_remote_name(remote_name):
 @app.route('/api/v1/ir/remote/<remote>/<button>')
 @app.route('/api/v1/ir/remote/<remote>/<button>/state')
 def api_v1_ir_remote_remote_button(remote, button, state=None):
+    try:
+        buttonlist = get_list_of_remote_buttons(remote)
+    except Exception as ex:
+        return make_response(jsonify(err=str(ex)), 403)
+    if button not in [x[0] for x in buttonlist]:
+        return make_response(jsonify(err="Button not defined"), 403)
     if state not in ['pressed', 'on', None]:
         return make_response(jsonify(err="State is invalid"), 403)
-    pass
+    if state in ['pressed', 'on']:
+        cmd = subprocess.Popen(
+            ['irsend', 'SEND_ONCE', remote, button],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        cmd.wait()
+    button_status = {}
+    for x in buttonlist:
+        if x[0] == button:
+            button_status['button'] = x[0]
+            button_status['name'] = x[1]
+    return jsonify(**button_status)
 
 
 if __name__ == '__main__':
