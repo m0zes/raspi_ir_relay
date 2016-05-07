@@ -26,23 +26,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from flask import Flask, url_for, jsonify, make_response, render_template, json
+from flask import Flask, url_for, jsonify, make_response, render_template, json,\
+    request
 import flask_from_url
 import os
 import subprocess
-TESTING = True
 DEBUG = True
-REMOTE_CONF_DIR = '/etc/lirc/lirc.conf.d'
+LIRCD_CONF = '/etc/lirc/lircd.conf'
+REMOTE_CONF_DIR = os.path.join(os.path.dirname(LIRCD_CONF), 'lircd.conf.d')
 MACRO_CONF_DIR = 'macros'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('RASPI_IR_RELAY_SETTINGS', silent=True)
 
-if TESTING:
-    import testingRELAYplate as RELAY
-else:
+try:
     import piplates.RELAYplate as RELAY
+except:
+    print("Warning: piplates controller could not be loaded")
+    print("Warning: enabling TESTING mode")
+    TESTING = True
+    import testingRELAYplate as RELAY
 
 if not os.path.isabs(REMOTE_CONF_DIR):
     REMOTE_CONF_DIR = os.path.join(
@@ -95,17 +99,65 @@ def toggle_leds_on_plate(plate_num):
     RELAY.toggleLED(plate_num)
 
 
-def get_list_of_remotes():
+def setup_remote_conf_dir():
     if not os.path.exists(REMOTE_CONF_DIR):
         os.mkdir(REMOTE_CONF_DIR)
     elif not os.path.isdir(REMOTE_CONF_DIR):
         raise Exception("Incorrect REMOTE_CONF_DIR configuration")
+
+
+def get_list_of_remotes():
+    setup_remote_conf_dir()
     remotes = []
     for item in os.listdir(REMOTE_CONF_DIR):
         if '.conf' not in item:
             continue
         remotes.append(item.split('.conf')[0])
     return remotes
+
+
+def generate_lircd_conf():
+    with open(LIRCD_CONF, 'w') as f:
+        for remote in get_list_of_remotes():
+            f.write(
+                'include "{}"\n'.format(
+                    os.path.join(
+                        REMOTE_CONF_DIR,
+                        '{}.conf'.format(remote)
+                    )
+                )
+            )
+
+
+def set_remote_definition(remote_json, remote_name=None):
+    setup_remote_conf_dir()
+    ds_name = remote_json.keys()[0]
+    if remote_name is None:
+        remote_name = ds_name
+    remote_fn = "{}.conf".format(remote_name)
+    with open(os.path.join(REMOTE_CONF_DIR, remote_fn), 'w') as f:
+        for line in remote_json[ds_name].split('\n'):
+            if 'begin remote' in line:
+                named = False
+            if 'name' in line:
+                line = '\tname {}\n'.format(remote_name)
+                named = True
+            if 'begin codes' in line and not named:
+                f.write('\tname {}\n'.format(remote_name))
+            if 'end remote' in line:
+                f.write('{}\n'.format(line))
+                break
+            f.write('{}\n'.format(line))
+    generate_lircd_conf()
+
+
+def remove_remote_definition(remote_name):
+    setup_remote_conf_dir()
+    os.remove(os.path.join(
+        REMOTE_CONF_DIR,
+        "{}.conf".format(remote_name)
+    ))
+    generate_lircd_conf()
 
 
 def get_list_of_remote_buttons(remote_name):
@@ -155,6 +207,22 @@ def get_macro_definition(macro_name):
         return json.load(f)
 
 
+def set_macro_definition(macro_json, macro_name=None):
+    ds_name = macro_json.keys()[0]
+    if macro_name is None:
+        macro_name = ds_name
+    macro_fn = "{}.json".format(macro_name)
+    with open(os.path.join(MACRO_CONF_DIR, macro_fn), 'w') as f:
+        json.dump(macro_json[ds_name], f)
+
+
+def remove_macro_definition(macro_name):
+    os.remove(os.path.join(
+        MACRO_CONF_DIR,
+        "{}.json".format(macro_name)
+    ))
+
+
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -167,7 +235,6 @@ def api_versions():
 
 @app.route('/api/v1')
 def api_v1():
-    # return jsonify(relay_plates=get_list_of_relay_plates(), remote=get_lirc)
     endpoints = {}
     endpoints[url_for(api_v1_plate)] = 'plate'
     endpoints[url_for(api_v1_ir)] = 'ir'
@@ -237,8 +304,13 @@ def api_v1_ir():
     return jsonify(**endpoints)
 
 
-@app.route('/api/v1/ir/macro')
+@app.route('/api/v1/ir/macro', methods=['GET', 'PUT'])
 def api_v1_ir_macro():
+    if request.method == 'PUT':
+        try:
+            set_macro_definition(request.get_json())
+        except Exception as ex:
+            return make_response(jsonify(err=str(ex)), 403)
     try:
         macrolist = get_list_of_macros()
     except Exception as ex:
@@ -252,24 +324,42 @@ def api_v1_ir_macro():
     return jsonify(**macros)
 
 
-@app.route('/api/v1/ir/macro/<macro_name>')
+@app.route('/api/v1/ir/macro/<macro_name>', methods=['GET', 'POST', 'DELETE'])
 @app.route('/api/v1/ir/macro/<macro_name>/<state>')
 def api_v1_ir_macro_name(macro_name, state=None):
+    if request.method == 'POST':
+        try:
+            set_macro_definition(request.get_json(), macro_name)
+        except Exception as ex:
+            return make_response(jsonify(err=str(ex)), 403)
     try:
         macro = get_macro_definition(macro_name)
     except Exception as ex:
         return make_response(jsonify(err=str(ex)), 403)
+    if request.method == 'DELETE':
+        try:
+            remove_macro_definition(macro_name)
+        except Exception as ex:
+            return make_response(jsonify(err=str(ex)), 403)
+        return jsonify(status="ok")
     if state not in ['pressed', 'on', None]:
         return make_response(jsonify(err="State is invalid"), 403)
     if state in ['pressed', 'on']:
         for url in macro:
             func, args = flask_from_url.from_url(url)
             func(**args)
-    return jsonify()
+    formatted_macro = {}
+    formatted_macro[macro_name] = macro
+    return jsonify(**formatted_macro)
 
 
-@app.route('/api/v1/ir/remote')
+@app.route('/api/v1/ir/remote', methods=['GET', 'PUT'])
 def api_v1_ir_remote():
+    if request.method == 'PUT':
+        try:
+            set_remote_definition(request.get_json())
+        except Exception as ex:
+            return make_response(jsonify(err=str(ex)), 403)
     try:
         remotelist = get_list_of_remotes()
     except Exception as ex:
@@ -283,12 +373,23 @@ def api_v1_ir_remote():
     return jsonify(**remotes)
 
 
-@app.route('/api/v1/ir/remote/<remote_name>')
+@app.route('/api/v1/ir/remote/<remote_name>', methods=['GET', 'POST', 'DELETE'])
 def api_v1_ir_remote_remote_name(remote_name):
+    if request.method == 'POST':
+        try:
+            set_remote_definition(request.get_json(), remote_name)
+        except Exception as ex:
+            return make_response(jsonify(err=str(ex)), 403)
     try:
         buttonlist = get_list_of_remote_buttons(remote_name)
     except Exception as ex:
         return make_response(jsonify(err=str(ex)), 403)
+    if request.method == 'DELETE':
+        try:
+            remove_remote_definition(remote_name)
+        except Exception as ex:
+            return make_response(jsonify(err=str(ex)), 403)
+        return jsonify(status="ok")
     buttons = {}
     for button in buttonlist:
         buttons[url_for(
