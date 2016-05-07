@@ -27,6 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 relays = {1: 0, 3: 0, 5: 0, 7: 0}
 
+relaysPresent = [0, 1, 0, 1, 0, 1, 0, 1]
+
 
 def getADDR(plate_num):
     global relays
@@ -42,4 +44,4 @@ def relaySTATE(plate_num):
 
 def relayTOGGLE(plate_num, relay_num):
     global relays
-    relays[plate_num] = relays[plate_num] ^ (1 << (relay_num -1))
+    relays[plate_num] = relays[plate_num] ^ (1 << (relay_num - 1))

@@ -58,10 +58,12 @@ if not os.path.isabs(MACRO_CONF_DIR):
 
 
 def get_list_of_relay_plates():
-    plates = list(range(0, 9))
-    for plate_num in plates:
-        if RELAY.getADDR(plate_num) != plate_num:
-            plates.remove(plate_num)
+    plates = []
+    i = 0
+    for plate in RELAY.relaysPresent:
+        if plate == 1:
+            plates.append(i)
+        i += 1
     return plates
 
 
@@ -85,6 +87,12 @@ def toggle_state_of_relay(plate_num, relay_num):
     RELAY.relayTOGGLE(plate_num, relay_num)
     relay_status = get_state_of_relays_on_plate(plate_num)
     return relay_status[relay_num]
+
+
+def toggle_leds_on_plate(plate_num):
+    if plate_num not in get_list_of_relay_plates():
+        raise Exception("Plate Number is invalid")
+    RELAY.toggleLED(plate_num)
 
 
 def get_list_of_remotes():
@@ -161,11 +169,8 @@ def api_versions():
 def api_v1():
     # return jsonify(relay_plates=get_list_of_relay_plates(), remote=get_lirc)
     endpoints = {}
-    for relay_plate in get_list_of_relay_plates():
-        endpoints[url_for(
-            'api_v1_plate_num',
-            plate_num=relay_plate
-        )] = relay_plate
+    endpoints[url_for(api_v1_plate)] = 'plate'
+    endpoints[url_for(api_v1_ir)] = 'ir'
     return jsonify(**endpoints)
 
 
@@ -184,16 +189,25 @@ def api_v1_plate():
 def api_v1_plate_num(plate_num):
     try:
         relay_status = get_state_of_relays_on_plate(plate_num)
-        endpoints = {}
-        for relay_num, state in relay_status.items():
-            endpoints[url_for(
-                'api_v1_plate_num_relay_set',
-                plate_num=plate_num,
-                relay_num=relay_num
-            )] = state
-        return jsonify(**endpoints)
     except Exception as ex:
         return make_response(jsonify(err=str(ex)), 403)
+    endpoints = {}
+    for relay_num, state in relay_status.items():
+        endpoints[url_for(
+            'api_v1_plate_num_relay_set',
+            plate_num=plate_num,
+            relay_num=relay_num
+        )] = state
+    return jsonify(**endpoints)
+
+
+@app.route('/api/v1/plate/<int:plate_num>/toggleleds')
+def api_v1_plate_num_toggle_leds(plate_num):
+    try:
+        toggle_leds_on_plate(plate_num)
+    except Exception as ex:
+        return make_response(jsonify(err=str(ex)), 403)
+    return jsonify(status="ok")
 
 
 @app.route('/api/v1/plate/<int:plate_num>/<int:relay_num>')
@@ -213,6 +227,14 @@ def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
             or state == 'toggle'):
         curr_relay_state = toggle_state_of_relay(plate_num, relay_num)
     return jsonify(state=curr_relay_state)
+
+
+@app.route('/api/v1/ir')
+def api_v1_ir():
+    endpoints = {}
+    endpoints[url_for('api_v1_ir_macro')] = 'macro'
+    endpoints[url_for('api_v1_ir_remote')] = 'remote'
+    return jsonify(**endpoints)
 
 
 @app.route('/api/v1/ir/macro')
