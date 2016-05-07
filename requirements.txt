@@ -1,0 +1,5 @@
+flask
+pi_plates
+# since pi_plates doesn't define its dependencies
+spidev
+RPi.GPIO
