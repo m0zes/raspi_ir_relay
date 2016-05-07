@@ -18,7 +18,11 @@ It seemed like a waste to have such a powerful device doing such a simple task, 
 expand its duties into a web-controlled universal remote for all my av equipment.
 
 ## Screenshots and Construction photos will come.
-Parts have been ordered.
+![Using a protoplate to breakout the raspberry pi's header](http://i.imgur.com/o1Sqi7B.jpg)
+![Proto Plate with the complete IR Circuit](http://i.imgur.com/sMnoEb9.jpg)
+![Completed Device](http://i.imgur.com/Pcskmng.jpg)
+![The outlet that will be controlled by the relay plate](http://i.imgur.com/zjCbX7E.jpg)
+http://imgur.com/a/UbdQC
 
 ## Thanks
 IR components and schematics ~~stolen~~borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/
@@ -47,3 +51,16 @@ IR components and schematics ~~stolen~~borrowed from http://alexba.in/blog/2013/
 | --- | ----------------------------------------------------- | ------:|
 | 2   | PCH175 (right angle led holders)                      |  $0.54 |
 | 1   | OED-EL-1L2 (35 degree IR emitter)                     |  $0.35 |
+
+### Various
+| QTY | Item | Price |
+| --- | --- | ---:|
+| 1ft | 18ga red wire | $0.36 |
+| 1ft | 18ga white wire | $0.36 |
+| 1ft | 18ga green wire | $0.36 |
+| 1 | electrical remodel box | $0.59 |
+| 1 | outlet cover plate | $0.29 |
+| 3ft | 16ga 3 wire extension cord | $2.97 |
+| 5ft | 16ga 2 wire extension cord | $2.95 |
+| 1 | electrical outlet | $1.29 |
+| 1 | grounded male electrical plug | $3.45 |
