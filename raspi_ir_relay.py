@@ -185,6 +185,16 @@ def get_list_of_remote_buttons(remote_name):
     return buttons
 
 
+def press_ir_button(remote, button):
+    cmd = subprocess.Popen(
+        ['irsend', 'SEND_ONCE', remote, button],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+    stdout, stderr = cmd.communicate()
+    if len(stderr) > 0 or cmd.returncode > 0:
+        raise Exception(stderr)
+
+
 def get_list_of_macros():
     if not os.path.exists(MACRO_CONF_DIR):
         os.mkdir(MACRO_CONF_DIR)
@@ -373,20 +383,20 @@ def api_v1_ir_remote():
     return jsonify(**remotes)
 
 
-@app.route('/api/v1/ir/remote/<remote_name>', methods=['GET', 'POST', 'DELETE'])
-def api_v1_ir_remote_remote_name(remote_name):
+@app.route('/api/v1/ir/remote/<remote>', methods=['GET', 'POST', 'DELETE'])
+def api_v1_ir_remote_remote_name(remote):
     if request.method == 'POST':
         try:
-            set_remote_definition(request.get_json(), remote_name)
+            set_remote_definition(request.get_json(), remote)
         except Exception as ex:
             return make_response(jsonify(err=str(ex)), 403)
     try:
-        buttonlist = get_list_of_remote_buttons(remote_name)
+        buttonlist = get_list_of_remote_buttons(remote)
     except Exception as ex:
         return make_response(jsonify(err=str(ex)), 403)
     if request.method == 'DELETE':
         try:
-            remove_remote_definition(remote_name)
+            remove_remote_definition(remote)
         except Exception as ex:
             return make_response(jsonify(err=str(ex)), 403)
         return jsonify(status="ok")
@@ -394,14 +404,14 @@ def api_v1_ir_remote_remote_name(remote_name):
     for button in buttonlist:
         buttons[url_for(
             'api_v1_ir_remote_remote_button',
-            remote=remote_name,
+            remote=remote,
             button=button[0]
         )] = button[1]
     return jsonify(**buttons)
 
 
 @app.route('/api/v1/ir/remote/<remote>/<button>')
-@app.route('/api/v1/ir/remote/<remote>/<button>/state')
+@app.route('/api/v1/ir/remote/<remote>/<button>/<state>')
 def api_v1_ir_remote_remote_button(remote, button, state=None):
     try:
         buttonlist = get_list_of_remote_buttons(remote)
@@ -412,11 +422,10 @@ def api_v1_ir_remote_remote_button(remote, button, state=None):
     if state not in ['pressed', 'on', None]:
         return make_response(jsonify(err="State is invalid"), 403)
     if state in ['pressed', 'on']:
-        cmd = subprocess.Popen(
-            ['irsend', 'SEND_ONCE', remote, button],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-        cmd.wait()
+        try:
+            press_ir_button(remote, button)
+        except Exception as ex:
+            return make_response(jsonify(err=str(ex)), 403)
     button_status = {}
     for x in buttonlist:
         if x[0] == button:
