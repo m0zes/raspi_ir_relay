@@ -246,8 +246,8 @@ def api_versions():
 @app.route('/api/v1')
 def api_v1():
     endpoints = {}
-    endpoints[url_for(api_v1_plate)] = 'plate'
-    endpoints[url_for(api_v1_ir)] = 'ir'
+    endpoints[url_for('api_v1_plate')] = 'plate'
+    endpoints[url_for('api_v1_ir')] = 'ir'
     return jsonify(**endpoints)
 
 
