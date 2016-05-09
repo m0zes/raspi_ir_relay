@@ -238,12 +238,12 @@ def home():
     return render_template('home.html')
 
 
-@app.route('/api')
+@app.route('/api/')
 def api_versions():
     return jsonify(v1=url_for('api_v1'))
 
 
-@app.route('/api/v1')
+@app.route('/api/v1/')
 def api_v1():
     endpoints = {}
     endpoints[url_for('api_v1_plate')] = 'plate'
@@ -251,7 +251,7 @@ def api_v1():
     return jsonify(**endpoints)
 
 
-@app.route('/api/v1/plate')
+@app.route('/api/v1/plate/')
 def api_v1_plate():
     endpoints = {}
     for relay_plate in get_list_of_relay_plates():
@@ -262,7 +262,7 @@ def api_v1_plate():
     return jsonify(**endpoints)
 
 
-@app.route('/api/v1/plate/<int:plate_num>')
+@app.route('/api/v1/plate/<int:plate_num>/')
 def api_v1_plate_num(plate_num):
     try:
         relay_status = get_state_of_relays_on_plate(plate_num)
@@ -287,7 +287,7 @@ def api_v1_plate_num_toggle_leds(plate_num):
     return jsonify(status="ok")
 
 
-@app.route('/api/v1/plate/<int:plate_num>/<int:relay_num>')
+@app.route('/api/v1/plate/<int:plate_num>/<int:relay_num>/')
 @app.route('/api/v1/plate/<int:plate_num>/<int:relay_num>/<state>')
 def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
     try:
@@ -306,7 +306,7 @@ def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
     return jsonify(state=curr_relay_state)
 
 
-@app.route('/api/v1/ir')
+@app.route('/api/v1/ir/')
 def api_v1_ir():
     endpoints = {}
     endpoints[url_for('api_v1_ir_macro')] = 'macro'
@@ -314,7 +314,7 @@ def api_v1_ir():
     return jsonify(**endpoints)
 
 
-@app.route('/api/v1/ir/macro', methods=['GET', 'PUT'])
+@app.route('/api/v1/ir/macro/', methods=['GET', 'PUT'])
 def api_v1_ir_macro():
     if request.method == 'PUT':
         try:
@@ -334,7 +334,7 @@ def api_v1_ir_macro():
     return jsonify(**macros)
 
 
-@app.route('/api/v1/ir/macro/<macro_name>', methods=['GET', 'POST', 'DELETE'])
+@app.route('/api/v1/ir/macro/<macro_name>/', methods=['GET', 'POST', 'DELETE'])
 @app.route('/api/v1/ir/macro/<macro_name>/<state>')
 def api_v1_ir_macro_name(macro_name, state=None):
     if request.method == 'POST':
@@ -363,7 +363,7 @@ def api_v1_ir_macro_name(macro_name, state=None):
     return jsonify(**formatted_macro)
 
 
-@app.route('/api/v1/ir/remote', methods=['GET', 'PUT'])
+@app.route('/api/v1/ir/remote/', methods=['GET', 'PUT'])
 def api_v1_ir_remote():
     if request.method == 'PUT':
         try:
@@ -383,7 +383,7 @@ def api_v1_ir_remote():
     return jsonify(**remotes)
 
 
-@app.route('/api/v1/ir/remote/<remote>', methods=['GET', 'POST', 'DELETE'])
+@app.route('/api/v1/ir/remote/<remote>/', methods=['GET', 'POST', 'DELETE'])
 def api_v1_ir_remote_remote_name(remote):
     if request.method == 'POST':
         try:
@@ -410,7 +410,7 @@ def api_v1_ir_remote_remote_name(remote):
     return jsonify(**buttons)
 
 
-@app.route('/api/v1/ir/remote/<remote>/<button>')
+@app.route('/api/v1/ir/remote/<remote>/<button>/')
 @app.route('/api/v1/ir/remote/<remote>/<button>/<state>')
 def api_v1_ir_remote_remote_button(remote, button, state=None):
     try:
