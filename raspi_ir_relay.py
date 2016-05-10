@@ -29,6 +29,7 @@
 from flask import Flask, url_for, jsonify, make_response, render_template, json,\
     request
 import flask_from_url
+import time
 import os
 import subprocess
 
@@ -278,6 +279,15 @@ def api_v1():
     endpoints[url_for('api_v1_plate')] = 'plate'
     endpoints[url_for('api_v1_ir')] = 'ir'
     return jsonify(**endpoints)
+
+
+@app.route('/api/v1/pause')
+def pause():
+    pause_time = request.args.get('time')
+    if pause_time is None:
+        pause_time = 1
+    time.sleep(pause_time)
+    return jsonify(status="ok")
 
 
 @app.route('/api/v1/plate/')
