@@ -87,7 +87,9 @@
       for(var key in jsonObj) {
         loadJSON(key, function(myobj) {
           for(new_key in myobj) {
-            relay_inserter(baseRelayObj, new_key, myobj[new_key]);
+            if(new_key != 'name'){
+              relay_inserter(baseRelayObj, new_key, myobj[new_key]);
+            }
           }
         });
       }
