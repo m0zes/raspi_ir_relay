@@ -48,6 +48,16 @@ except:
     TESTING = True
     import testingRELAYplate as RELAY
 
+DEBUG = True
+LIRCD_CONF = '/etc/lirc/lircd.conf'
+REMOTE_CONF_DIR = os.path.join(os.path.dirname(LIRCD_CONF), 'lircd.conf.d')
+MACRO_CONF_DIR = 'macros'
+PLATE_CONF_DIR = 'plates'
+
+app = Flask(__name__)
+app.config.from_object(__name__)
+app.config.from_envvar('RASPI_IR_RELAY_SETTINGS', silent=True)
+
 if not os.path.isabs(REMOTE_CONF_DIR):
     REMOTE_CONF_DIR = os.path.join(
         os.path.dirname(__file__),
@@ -60,6 +70,12 @@ if not os.path.isabs(MACRO_CONF_DIR):
         MACRO_CONF_DIR
     )
 
+if not os.path.isabs(PLATE_CONF_DIR):
+    PLATE_CONF_DIR = os.path.join(
+        os.path.dirname(__file__),
+        PLATE_CONF_DIR
+    )
+
 
 def get_list_of_relay_plates():
     plates = []
@@ -69,6 +85,27 @@ def get_list_of_relay_plates():
             plates.append(i)
         i += 1
     return plates
+
+
+def load_relay_plate_conf(plate_num):
+    plate_fn = os.path.join(PLATE_CONF_DIR, "plate_{}.json".format(plate_num))
+    if not os.path.exists(plate_fn) or not os.path.isfile(plate_fn):
+        plate_conf = {"name": "plate_{}".format(plate_num)}
+
+        for relay in range(1, 8):
+            plate_conf['relay_{}'.format(relay)] = 'relay_{}'.format(relay)
+    else:
+        with open(plate_fn, 'r') as f:
+            plate_conf = json.load(f)
+    return plate_conf
+
+
+def save_relay_plate_conf(plate_num, plate_conf):
+    if not os.path.exists(PLATE_CONF_DIR):
+        os.mkdir(PLATE_CONF_DIR)
+    plate_fn = os.path.join(PLATE_CONF_DIR, "plate_{}.json".format(plate_num))
+    with open(plate_fn, 'w') as f:
+        json.dump(plate_conf, f)
 
 
 def get_state_of_relays_on_plate(plate_num):
@@ -268,7 +305,14 @@ def api_v1_plate_num(plate_num):
         relay_status = get_state_of_relays_on_plate(plate_num)
     except Exception as ex:
         return make_response(jsonify(err=str(ex)), 403)
-    endpoints = {}
+    plate_conf = load_relay_plate_conf(plate_num)
+    plate_name = request.args.get('name')
+    if plate_name is None:
+        plate_name = plate_conf['name']
+    else:
+        plate_conf['name'] = plate_name
+        save_relay_plate_conf(plate_num, plate_conf)
+    endpoints = {'name': plate_name}
     for relay_num, state in relay_status.items():
         endpoints[url_for(
             'api_v1_plate_num_relay_set',
@@ -298,12 +342,19 @@ def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
         return make_response(jsonify(err="Relay is invalid"), 403)
     if state not in ['off', 'on', 'toggle', None]:
         return make_response(jsonify(err="State is invalid"), 403)
+    plate_conf = load_relay_plate_conf(plate_num)
+    relay_name = request.args.get('name')
+    if relay_name is None:
+        relay_name = plate_conf['relay_{}'.format(relay_num)]
+    else:
+        plate_conf['relay_{}'.format(relay_num)] = relay_name
+        save_relay_plate_conf(plate_num, plate_conf)
     curr_relay_state = relay_status[relay_num]
     if ((curr_relay_state == 'on' and state == 'off')
             or (curr_relay_state == 'off' and state == 'on')
             or state == 'toggle'):
         curr_relay_state = toggle_state_of_relay(plate_num, relay_num)
-    return jsonify(state=curr_relay_state)
+    return jsonify(state=curr_relay_state, name=relay_name)
 
 
 @app.route('/api/v1/ir/')
