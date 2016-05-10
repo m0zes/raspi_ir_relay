@@ -31,14 +31,6 @@ from flask import Flask, url_for, jsonify, make_response, render_template, json,
 import flask_from_url
 import os
 import subprocess
-DEBUG = True
-LIRCD_CONF = '/etc/lirc/lircd.conf'
-REMOTE_CONF_DIR = os.path.join(os.path.dirname(LIRCD_CONF), 'lircd.conf.d')
-MACRO_CONF_DIR = 'macros'
-
-app = Flask(__name__)
-app.config.from_object(__name__)
-app.config.from_envvar('RASPI_IR_RELAY_SETTINGS', silent=True)
 
 try:
     import piplates.RELAYplate as RELAY
