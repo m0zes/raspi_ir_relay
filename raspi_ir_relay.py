@@ -310,7 +310,10 @@ def api_v1_plate_num(plate_num):
             'api_v1_plate_num_relay_set',
             plate_num=plate_num,
             relay_num=relay_num
-        )] = state
+        )] = {
+            'state': state,
+            'name': plate_conf['relay_{}'.format(relay_num)]
+        }
     return jsonify(**endpoints)
 
 

@@ -51,7 +51,7 @@
   <body id=body>
   <script>
     var baseRelayObj = "<div id=baseid onclick=\"javascript:change_relay_state(\'baseurltoggle\', \'baseid\')\">relayname: basestate</div>";
-    function relay_inserter(baseObj, url, state, plate_name) {
+    function relay_inserter(baseObj, url, relay_info, plate_name) {
       var splits = url.split('/');
       var plate_num = splits[splits.length-3];
       var relay_num = splits[splits.length-2];
@@ -59,7 +59,8 @@
       var my_id = "plate_" + plate_num + "_relay_" + relay_num;
       baseObj = baseObj.replace(/baseid/g, my_id); 
       baseObj = baseObj.replace(/baseurl/g, url);
-      baseObj = baseObj.replace(/basestate/g, state);
+      baseObj = baseObj.replace(/basestate/g, relay_info['state']);
+      baseObj = baseObj.replace(/relayname/g, relay_info['name']);
       var plate_obj = document.getElementById(plate_id);
       if(plate_obj == null) {
         document.getElementById("plates").innerHTML = document.getElementById("plates").innerHTML + "<div id=" + plate_id + " class=\"plate\"><span class=\"plate\">" + plate_name + "</span></div>";
@@ -70,14 +71,7 @@
       } else {
         obj.parentNode.replaceChild(baseObj, obj);
       }
-      document.getElementById(my_id).className = "relay relay_" + state;
-      loadJSON(url, function(jsonObj){
-          document.getElementById(my_id).innerHTML = document.getElementById(my_id).innerHTML.replace(/relayname/g, jsonObj['name']);
-      });
-    }
-    function data_inserter(url, data, id){
-      var bodyObj = document.getElementById(id);
-      bodyObj.innerHTML = bodyObj.innerHTML + "url: " + url + ", state: " + data + "<br />";
+      document.getElementById(my_id).className = "relay relay_" + relay_info['state'];
     }
     function change_relay_state(url, my_id) {
       loadJSON(url, function(jsonObj){
