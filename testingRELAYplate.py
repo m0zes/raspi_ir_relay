@@ -45,3 +45,7 @@ def relaySTATE(plate_num):
 def relayTOGGLE(plate_num, relay_num):
     global relays
     relays[plate_num] = relays[plate_num] ^ (1 << (relay_num - 1))
+
+
+def toggleLED(plate_num):
+    return True
