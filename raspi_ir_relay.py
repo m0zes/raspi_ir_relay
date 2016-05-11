@@ -148,6 +148,23 @@ def get_list_of_remotes():
     return remotes
 
 
+def get_list_of_buttons_for_irrecord():
+    proc = subprocess.Popen(
+        ['irrecord', '--list-namespace'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    buttons, error = proc.communicate()
+    if proc.returncode > 0:
+        raise Exception(error)
+    lb = []
+    for button in buttons.decode('ascii', 'ignore').split('\n'):
+        if button == '':
+            continue
+        lb.append(button.strip())
+    return lb
+
+
 def generate_lircd_conf():
     with open(LIRCD_CONF, 'w') as f:
         for remote in get_list_of_remotes():
@@ -370,6 +387,15 @@ def api_v1_ir():
     endpoints[url_for('api_v1_ir_macro')] = 'macro'
     endpoints[url_for('api_v1_ir_remote')] = 'remote'
     return jsonify(**endpoints)
+
+
+@app.route('/api/v1/ir/irrecord_buttons')
+def api_v1_irrecord_buttons():
+    try:
+        buttons = get_list_of_buttons_for_irrecord()
+    except Exception as ex:
+        return make_response(jsonify(err=str(ex)), 403)
+    return jsonify(buttons=buttons)
 
 
 @app.route('/api/v1/ir/macro/', methods=['GET', 'PUT'])
