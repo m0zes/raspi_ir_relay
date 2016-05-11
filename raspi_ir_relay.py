@@ -34,6 +34,7 @@ import flask_from_url
 import time
 import os
 import subprocess
+from flask_socketio import SocketIO, emit
 
 try:
     import piplates.RELAYplate as RELAY
@@ -52,6 +53,7 @@ PLATE_CONF_DIR = 'plates'
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('RASPI_IR_RELAY_SETTINGS', silent=True)
+socketio = SocketIO(app)
 
 if not os.path.isabs(REMOTE_CONF_DIR):
     REMOTE_CONF_DIR = os.path.join(
@@ -287,6 +289,11 @@ def home():
     return render_template('home.html')
 
 
+@app.route('/wss')
+def websockets():
+    return render_template('wss.html')
+
+
 @app.route('/api/')
 def api_versions():
     return jsonify(v1=url_for('api_v1'))
@@ -519,5 +526,11 @@ def api_v1_ir_remote_remote_button(remote, button, state=None):
     return jsonify(**button_status)
 
 
+@socketio.on('start irrecord', namespace='/irrecord')
+def start_irrecord(message):
+    print(message)
+    emit('irrecord_output', {'count': 0, 'data': message['data']})
+
+
 if __name__ == '__main__':
-        app.run(host='0.0.0.0')
+    socketio.run(app, host='0.0.0.0')
