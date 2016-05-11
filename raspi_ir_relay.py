@@ -386,6 +386,7 @@ def api_v1_ir():
     endpoints = {}
     endpoints[url_for('api_v1_ir_macro')] = 'macro'
     endpoints[url_for('api_v1_ir_remote')] = 'remote'
+    endpoints[url_for('api_v1_irrecord_buttons')] = 'irrecord_buttons'
     return jsonify(**endpoints)
 
 
