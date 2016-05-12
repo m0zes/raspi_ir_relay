@@ -371,6 +371,8 @@ def api_v1_plate_num_relay_set(plate_num, relay_num, state=None):
         return make_response(jsonify(err=str(ex)), 403)
     if relay_num not in relay_status.keys():
         return make_response(jsonify(err="Relay is invalid"), 403)
+    if state is None:
+        state = request.args.get('state')
     if state not in ['off', 'on', 'toggle', None]:
         return make_response(jsonify(err="State is invalid"), 403)
     plate_conf = load_relay_plate_conf(plate_num)
@@ -444,6 +446,8 @@ def api_v1_ir_macro_name(macro_name, state=None):
         except Exception as ex:
             return make_response(jsonify(err=str(ex)), 403)
         return jsonify(status="ok")
+    if state is None:
+        state = request.args.get('state')
     if state not in ['pressed', 'on', None]:
         return make_response(jsonify(err="State is invalid"), 403)
     if state in ['pressed', 'on']:
@@ -511,6 +515,8 @@ def api_v1_ir_remote_remote_button(remote, button, state=None):
         return make_response(jsonify(err=str(ex)), 403)
     if button not in [x[0] for x in buttonlist]:
         return make_response(jsonify(err="Button not defined"), 403)
+    if state is None:
+        state = request.args.get('state')
     if state not in ['pressed', 'on', None]:
         return make_response(jsonify(err="State is invalid"), 403)
     if state in ['pressed', 'on']:
@@ -529,7 +535,7 @@ def api_v1_ir_remote_remote_button(remote, button, state=None):
 @socketio.on('start irrecord', namespace='/irrecord')
 def start_irrecord(message):
     print(message)
-    emit('irrecord_output', {'count': 0, 'data': message['data']})
+    emit('irrecord output', {'data': message['data']})
 
 
 if __name__ == '__main__':
