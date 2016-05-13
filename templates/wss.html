@@ -26,7 +26,7 @@
             // handlers for the different forms in the page
             // these send data to the server in a variety of ways
             $('form#start_irrecord').submit(function(event) {
-                socket.emit('start irrecord', {data: $('#irrecord_name').val()});
+                socket.emit('start irrecord', {remote: $('#irrecord_name').val()});
                 $('form#start_irrecord').hide();
                 return false;
             });
@@ -37,7 +37,7 @@
                 });
             });
             $('form#namespace_button').submit(function(event) {
-                socket.emit('send irrecord button', {data: $('#button').val()});
+                socket.emit('send irrecord button', {button: $('#button').val()});
                 $('form#end_button').show();
                 return false;
             });

@@ -34,7 +34,9 @@ import flask_from_url
 import time
 import os
 import subprocess
+import fcntl
 from flask_socketio import SocketIO, emit
+from threading import Thread
 
 try:
     import piplates.RELAYplate as RELAY
@@ -46,14 +48,18 @@ except:
 
 DEBUG = True
 LIRCD_CONF = '/etc/lirc/lircd.conf'
-REMOTE_CONF_DIR = os.path.join(os.path.dirname(LIRCD_CONF), 'lircd.conf.d')
+REMOTE_CONF_DIR = 'remotes'
 MACRO_CONF_DIR = 'macros'
 PLATE_CONF_DIR = 'plates'
+LIRC_DEVICE = '/dev/lirc0'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('RASPI_IR_RELAY_SETTINGS', silent=True)
 socketio = SocketIO(app)
+
+irrecord_proc = None
+irrecord_sender_thread = None
 
 if not os.path.isabs(REMOTE_CONF_DIR):
     REMOTE_CONF_DIR = os.path.join(
@@ -178,6 +184,48 @@ def generate_lircd_conf():
                     )
                 )
             )
+
+
+def irrecord_output_sender():
+    global irrecord_proc
+    while True:
+        if irrecord_proc is None:
+            time.sleep(1)
+            continue
+        try:
+            data = irrecord_proc.stdout.read()
+        except IOError:
+            time.sleep(1)
+            continue
+        print("Read data from irrecord stdout: {}".format(data))
+        socketio.emit('irrecord output', {'data': data}, namespace='/irrecord')
+
+
+def start_irrecord(remote):
+    global irrecord_proc
+    global irrecord_sender_thread
+    if irrecord_sender_thread is None:
+        irrecord_sender_thread = Thread(target=irrecord_output_sender)
+        irrecord_sender_thread.daemon = True
+        irrecord_sender_thread.start()
+    pwd = os.getcwd()
+    os.chdir(REMOTE_CONF_DIR)
+    irrecord_proc = subprocess.Popen(
+        ['irrecord', '-d', LIRC_DEVICE, remote],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+    fcntl.fcntl(irrecord_proc.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
+    os.chdir(pwd)
+
+
+def send_irrecord_button(button):
+    global irrecord_proc
+    if irrecord_proc is None:
+        raise Exception('irrecord not running')
+    irrecord_proc.stdin.write("{}\n".format(button))
+    irrecord_proc.stdin.flush()
 
 
 def set_remote_definition(remote_json, remote_name=None):
@@ -533,9 +581,22 @@ def api_v1_ir_remote_remote_button(remote, button, state=None):
 
 
 @socketio.on('start irrecord', namespace='/irrecord')
-def start_irrecord(message):
+def wss_start_irrecord(message):
+    start_irrecord(message['remote'])
     print(message)
-    emit('irrecord output', {'data': message['data']})
+    emit('irrecord output', {
+        'data': 'Starting irrecord for {}'.format(
+            message['remote']
+        )
+    })
+
+
+@socketio.on('send irrecord button', namespace='/irrecord')
+def wss_send_button(message):
+    send_irrecord_button(message['button'])
+    emit('irrecord output', {
+        'data': message['button']
+    })
 
 
 if __name__ == '__main__':
