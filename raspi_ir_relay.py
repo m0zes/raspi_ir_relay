@@ -63,19 +63,19 @@ irrecord_sender_thread = None
 
 if not os.path.isabs(REMOTE_CONF_DIR):
     REMOTE_CONF_DIR = os.path.join(
-        os.path.dirname(__file__),
+        os.path.dirname(os.path.abspath(__file__)),
         REMOTE_CONF_DIR
     )
 
 if not os.path.isabs(MACRO_CONF_DIR):
     MACRO_CONF_DIR = os.path.join(
-        os.path.dirname(__file__),
+        os.path.dirname(os.path.abspath(__file__)),
         MACRO_CONF_DIR
     )
 
 if not os.path.isabs(PLATE_CONF_DIR):
     PLATE_CONF_DIR = os.path.join(
-        os.path.dirname(__file__),
+        os.path.dirname(os.path.abspath(__file__)),
         PLATE_CONF_DIR
     )
 
@@ -275,10 +275,11 @@ def get_list_of_remote_buttons(remote_name):
             line = line.strip()
             if '#' in line:
                 line, comment = line.split('#', 1)
+                line = line.split()[0]
             else:
                 line = line.split()[0]
                 comment = line
-            buttons.append([line, comment.strip()])
+            buttons.append([line.strip(), comment.strip()])
         else:
             raise Exception("Malformed remote configuration")
     return buttons
@@ -522,7 +523,7 @@ def api_v1_ir_remote():
     for remote in remotelist:
         remotes[url_for(
             'api_v1_ir_remote_remote_name',
-            remote_name=remote
+            remote=remote
         )] = remote
     return jsonify(**remotes)
 
