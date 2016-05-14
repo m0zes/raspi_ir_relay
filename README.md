@@ -25,7 +25,8 @@ expand its duties into a web-controlled universal remote for all my av equipment
 http://imgur.com/a/UbdQC
 
 ## Thanks
-IR components and schematics ~~stolen~~borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/
+~~IR components and schematics borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/~~
+Do not use the above IR schematics. This has led to at least 4 blown IR LEDs in my testing alone. I'll post a ~~fixed~~completed schematic soon
 
 ## BOM
 ### Adafruit
