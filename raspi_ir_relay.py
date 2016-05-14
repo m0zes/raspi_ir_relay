@@ -262,6 +262,7 @@ def remove_remote_definition(remote_name):
 def get_list_of_remote_buttons(remote_name):
     conf_file = os.path.join(REMOTE_CONF_DIR, "{}.conf".format(remote_name))
     buttons = []
+    namespace_buttons = get_list_of_buttons_for_irrecord()
     with open(conf_file, 'r') as f:
         started_codes = False
         for line in f:
@@ -279,7 +280,11 @@ def get_list_of_remote_buttons(remote_name):
             else:
                 line = line.split()[0]
                 comment = line
-            buttons.append([line.strip(), comment.strip()])
+            button = line.strip()
+            comment = comment.strip()
+            if button not in namespace_buttons:
+                continue
+            buttons.append([button, comment])
         else:
             raise Exception("Malformed remote configuration")
     return buttons
