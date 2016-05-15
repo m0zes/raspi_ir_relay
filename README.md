@@ -31,7 +31,7 @@ Do not use the above IR schematics. This has led to at least 4 blown IR LEDs in 
 ### Diagram Components
 | Diagram Location | Type | Part Number / Value | Quantity | Price (each) |
 | ---------------- | ---- | ------------------- | --------:| ------------:|
-| D1, D2 | DIODE | | 1N4148 | 2 | $0.05 |
+| D1, D2 | DIODE | 1N4148 | 2 | $0.05 |
 | R1-R4 | RESISTOR | 10 | 4 | $0.07 |
 | Q1 | NPN | PN2222 | 1 | $0.20 |
 | R5 | RESISTOR | 3.3k | 1 | $0.02 |
