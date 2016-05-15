@@ -27,6 +27,17 @@ http://imgur.com/a/UbdQC
 ## Thanks
 ~~IR components and schematics borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/~~
 Do not use the above IR schematics. This has led to at least 4 blown IR LEDs in my testing alone. I'll post a ~~fixed~~completed schematic soon
+![This is my new circuit diagram](http://i.imgur.com/nNh1x7l.png)
+### Diagram Components
+| Diagram Location | Type | Part Number / Value | Quantity | Price (each) |
+| ---------------- | ---- | ------------------- | --------:| ------------:|
+| D1, D2 | DIODE | | 1N4148 | 2 | $0.05 |
+| R1-R4 | RESISTOR | 10 | 4 | $0.07 |
+| Q1 | NPN | PN2222 | 1 | $0.20 |
+| R5 | RESISTOR | 3.3k | 1 | $0.02 |
+| L1 | LED | TSAL6400 | 1 | $0.48 |
+| L2 | LED | TSAL6100 | 1 | $0.48 |
+| IRR1 | IR RECIEVER | TSOP38238 | 1 | $1.95 |
 
 ## BOM
 ### Adafruit
@@ -34,11 +45,9 @@ Do not use the above IR schematics. This has led to at least 4 blown IR LEDs in 
 | --- | ----------------------------------------------------- | ------:|
 | 1   | 5V 2.4A Raspi PS [ID:1995]                            |  $7.95 |
 | 1   | Raspberry Pi 3 [ID:3055]                              | $39.95 |
-| 1   | 5mm IR LED (940nm) [ID:387]                           |  $0.75 |
 | 1   | IR Receiver (TSOP38238) [ID:157]                      |  $1.95 |
 | 1   | Adafruit Pi Dish [ID:942]                             | $17.50 |
 | 1   | Transistors (PN2222) - 10 pack[ID:756]                |  $1.95 |
-| 1   | Resistors 10K ohm 5% 1/4W Pack of 25[ID:2784]         |  $0.75 |
 
 ### PIPlates
 | QTY | Item                                                  | Price  |
@@ -46,12 +55,6 @@ Do not use the above IR schematics. This has led to at least 4 blown IR LEDs in 
 | 1   | PROTOplate                                            |  $9.99 |
 | 1   | RELAYplate                                            | $39.99 |
 | 1   | BASEplate                                             |  $9.99 |
-
-### Mouser
-| QTY | Item                                                  | Price  |
-| --- | ----------------------------------------------------- | ------:|
-| 2   | PCH175 (right angle led holders)                      |  $0.54 |
-| 1   | OED-EL-1L2 (35 degree IR emitter)                     |  $0.35 |
 
 ### Various
 | QTY | Item | Price |
