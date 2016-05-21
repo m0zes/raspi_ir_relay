@@ -51,6 +51,7 @@
   <body id=body>
   <script>
     var baseRelayObj = "<div id=baseid onclick=\"javascript:change_relay_state(\'baseurltoggle\', \'baseid\')\">relayname: basestate</div>";
+    var baseRemoteButtonObj = "<div id=baseid onclick=\"javascript:press_remote_button(\'baseurlon\', \'baseid\')\">buttonname</div>";
     function relay_inserter(baseObj, url, relay_info, plate_name) {
       var splits = url.split('/');
       var plate_num = splits[splits.length-3];
@@ -77,7 +78,7 @@
       var splits = url.splits('/');
       var button_lirc_id = splits[splits.length-2]
       var remote_id = "remote_" + remote_name;
-      var button_id = remote_id "_button_" + button_lirc_id;
+      var button_id = remote_id + "_button_" + button_lirc_id;
       baseObj = baseObj.replace(/baseid/g, button_id);
       baseObj = baseObj.replace(/baseurl/g, button_url);
       baseObj = baseObj.replace(/buttonname/g, button_name);
