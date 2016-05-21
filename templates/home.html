@@ -82,7 +82,7 @@
       baseObj = baseObj.replace(/baseid/g, button_id);
       baseObj = baseObj.replace(/baseurl/g, button_url);
       baseObj = baseObj.replace(/buttonname/g, button_name);
-      var remote_obj = document.getElelmentById(remote_id);
+      var remote_obj = document.getElementById(remote_id);
       if(remote_obj = null) {
         document.getElementById("remotes").innerHTML = document.getElementById("remotes").innerHTML + "<div id=" + remote_id + "<class=\"remote\"><span class=\"remote\">" + remote_name + "</span></class>";
       }
