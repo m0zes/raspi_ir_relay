@@ -20,13 +20,16 @@ expand its duties into a web-controlled universal remote for all my av equipment
 ## Screenshots and Construction photos will come.
 ![Using a protoplate to breakout the raspberry pi's header](http://i.imgur.com/o1Sqi7B.jpg)
 ![Proto Plate with the complete IR Circuit](http://i.imgur.com/sMnoEb9.jpg)
+In the above photo, notice the transistor is backwards, and GPIO pin 22 should not have been used. Please learn from my mistakes.
 ![Completed Device](http://i.imgur.com/Pcskmng.jpg)
 ![The outlet that will be controlled by the relay plate](http://i.imgur.com/zjCbX7E.jpg)
 http://imgur.com/a/UbdQC
 
 ## Thanks
-~~IR components and schematics borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/~~
-Do not use the above IR schematics. This has led to at least 4 blown IR LEDs in my testing alone. I'll post a ~~fixed~~completed schematic soon
+IR components and schematics borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/
+If you follow the above schematic, please note that the pi-plates relays eat GPIO pins 22 and 25. Use a different one for the signaling of your IR circuit. *Not* noticing that led to more headaches than I care to admit.
+
+During my initial testing phase, a combination of things led to me believing the above reference led to at least 4 blown IR LEDs. I've got components (and tested) the below schematic, which I may swap out some time. Of note, I was able to send 1.3A cycles to the leds in the new diagram. If you're using all of the components I've suggested below, I'd use *a* 10Ohm resistor in place of the 4x10Ohm resistors I've got in here. This will lead to a reduction in range, but will keep your eyes (and LEDs) safe.
 ![This is my new circuit diagram](http://i.imgur.com/nNh1x7l.png)
 ### Diagram Components
 | Diagram Location | Type | Part Number / Value | Quantity | Price (each) |
