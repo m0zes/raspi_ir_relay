@@ -75,7 +75,7 @@
       document.getElementById(my_id).className = "relay relay_" + relay_info['state'];
     }
     function remote_button_inserter(baseObj, button_url, button_name, remote_name) {
-      var splits = url.splits('/');
+      var splits = button_url.split('/');
       var button_lirc_id = splits[splits.length-2]
       var remote_id = "remote_" + remote_name;
       var button_id = remote_id + "_button_" + button_lirc_id;
