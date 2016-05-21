@@ -46,6 +46,8 @@
       .relay {width: 14%; display: inline-block;}
       .relay_on {background-color: green;}
       .relay_off {background-color: red;}
+      .remote {width: 100%; display: block;}
+      .remote_button {width: 25%; display: inline-block;}
     </style>
   </head>
   <body id=body>
@@ -93,7 +95,7 @@
       } else {
         obj.parentNode.replaceChild(baseObj, obj);
       }
-      document.getElementById(button_id).className = "remote_button";
+      document.getElementById(button_id).className = "remote_button remote_button_" + button_lirc_id;
     }
     function change_relay_state(url, my_id) {
       loadJSON(url, function(jsonObj){
@@ -105,11 +107,13 @@
     function press_remote_button(url, my_id) {
       loadJSON(url, function(json){});
     }
-
+    // Get list of plates
     loadJSON('/api/v1/plate', function(jsonObj){
+      // for each plate, load the relays
       for(var key in jsonObj) {
         loadJSON(key, function(myobj) {
           var plate_name = myobj['name'];
+          // for each relay, insert it into the dom
           for(new_key in myobj) {
             if(new_key != 'name'){
               relay_inserter(baseRelayObj, new_key, myobj[new_key], plate_name);
@@ -118,9 +122,12 @@
         });
       }
     });
+    // Get list of remote
     loadJSON('/api/v1/ir/remote', function(jsonObj){
+      // for each remote, load the buttons
       for(var key in jsonObj) {
         loadJSON(key, function(remotedef) {
+          // for each button, insert it into the dom
           for(button in remotedef){
             remote_button_inserter(baseRemoteButtonObj, button, remotedef[button]);
           }
