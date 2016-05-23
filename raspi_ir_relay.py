@@ -265,21 +265,36 @@ def get_list_of_remote_buttons(remote_name):
     namespace_buttons = get_list_of_buttons_for_irrecord()
     with open(conf_file, 'r') as f:
         started_codes = False
+        started_raw_codes = False
         for line in f:
             if 'begin codes' in line:
                 started_codes = True
                 continue
-            if not started_codes:
+            if 'begin raw_codes' in line:
+                started_raw_codes = True
                 continue
-            if 'end codes' in line:
+            if not started_codes and not started_raw_codes:
+                continue
+            if 'end codes' in line or 'end raw_codes' in line:
                 break
-            line = line.strip()
-            if '#' in line:
-                line, comment = line.split('#', 1)
-                line = line.split()[0]
-            else:
-                line = line.split()[0]
-                comment = line
+            if started_codes:
+                line = line.strip()
+                if '#' in line:
+                    line, comment = line.split('#', 1)
+                    line = line.split()[0]
+                else:
+                    line = line.split()[0]
+                    comment = line
+            if started_raw_codes:
+                line = line.strip()
+                if 'name' not in line:
+                    continue
+                if '#' in line:
+                    line, comment = line.split('#', 1)
+                    line = line.split()[1]
+                else:
+                    line = line.split()[1]
+                    comment = line
             button = line.strip()
             comment = comment.strip()
             if button not in namespace_buttons:
