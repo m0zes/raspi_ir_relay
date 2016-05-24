@@ -299,6 +299,8 @@ def get_list_of_remote_buttons(remote_name):
             comment = comment.strip()
             if button not in namespace_buttons:
                 continue
+            if comment in namespace_buttons:
+                comment = comment[4:].title()
             buttons.append([button, comment])
         else:
             raise Exception("Malformed remote configuration")
