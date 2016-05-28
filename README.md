@@ -26,6 +26,7 @@ In the above photo, notice the transistor is backwards, and GPIO pin 22 should n
 http://imgur.com/a/UbdQC
 
 ![Early Screenshot of the webapp](http://i.imgur.com/DlooULl.png)
+![More Complete Screenshot, missing macro listings, and more css loving](http://i.imgur.com/9XwNweZ.png)
 
 ## Thanks
 IR components and schematics borrowed from http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/
