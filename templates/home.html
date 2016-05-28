@@ -2,9 +2,9 @@
   <head>
     <title>RasPi IR Relay Controller</title>
     <meta content="text/html; charset = UTF-8" http-equiv="content-type">
-      	
+
     <script type = "application/javascript">
-       // Shamelessly stolenborrowed from http://www.tutorialspoint.com/json/json_ajax_example.htm
+       // Shamelessly stolenborrowed from http://www.tutorialspoint.com/json/json_ajax_example.htm
        function loadJSON(data_file, callback){
           var http_request = new XMLHttpRequest();
           try{
@@ -14,9 +14,9 @@
              // Internet Explorer Browsers
              try{
                 http_request = new ActiveXObject("Msxml2.XMLHTTP");
-      				
+
              }catch (e) {
-      			
+
                 try{
                    http_request = new ActiveXObject("Microsoft.XMLHTTP");
                 }catch (e){
@@ -24,49 +24,75 @@
                    alert("Your browser broke!");
                    return false;
                 }
-      				
+
              }
           }
-      		
+
           http_request.onreadystatechange = function(){
-      		
+
              if (http_request.readyState == 4  ){
                 // Javascript function JSON.parse to parse JSON data
                 var jsonObj = JSON.parse(http_request.responseText);
                 callback(jsonObj);
              }
           }
-      		
+
           http_request.open("GET", data_file, true);
           http_request.send();
        }
     </script>
     <style>
-      .plate {width: 100%; display: block;}
-      .relay {width: 14%; display: inline-block;}
       .relay_on {background-color: green;}
       .relay_off {background-color: red;}
-      .remote {width: 100%; display: block;}
-      .remote_button {width: 25%; display: inline-block;}
+      .plate, #remotes, .remote, .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {display: flex; flex-flow: row wrap;}
+      .relay, .remote_button, .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {flex-grow: 1; flex-shrink: 0; margin: auto;}
+      .relay, .remote_button {border-style: solid; text-align:center; font-size: 0.85em}
+      @media (min-width: 700px) {
+        .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
+        .remote {width: 50%;}
+        .remote_button {width: calc(100% * (1/3) - 11px);}
+        .KEY_RED, .KEY_R, .KEY_BLUE, .KEY_B, .KEY_GREEN, .KEY_G, .KEY_YELLOW, .KEY_Y {width: calc(100% * (1/4) - 11px);}
+        .KEY_UP, .KEY_DOWN {width: calc(100% - 11px);}
+      }
+      @media (min-width: 1200px) {
+        .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
+        .remote {width: calc(100% * (1/3));}
+        .remote_button {width: calc(100% * (1/3) - 11px);}
+        .KEY_RED, .KEY_R, .KEY_BLUE, .KEY_B, .KEY_GREEN, .KEY_G, .KEY_YELLOW, .KEY_Y {width: calc(100% * (1/4) - 11px);}
+        .KEY_UP, .KEY_DOWN {width: calc(100% - 11px);}
+      }
+      @media (max-width: 700px) {
+        .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
+        .remote {width: 100%;}
+        .remote_button {width: calc(100% * (1/3) - 11px);}
+        .KEY_RED, .KEY_R, .KEY_BLUE, .KEY_B, .KEY_GREEN, .KEY_G, .KEY_YELLOW, .KEY_Y {width: calc(100% - 11px);}
+        .KEY_UP, .KEY_DOWN {width: calc(100% * (1/4) - 11px);}
+      }
     </style>
   </head>
   <body id=body>
   <script>
     var baseRelayObj = "<div id=baseid onclick=\"javascript:change_relay_state(\'baseurltoggle\', \'baseid\')\">relayname: basestate</div>";
     var baseRemoteButtonObj = "<div id=baseid onclick=\"javascript:press_remote_button(\'baseurlon\', \'baseid\')\">buttonname</div>";
+    var powerpad = ['KEY_POWER'];
+    var numpad = ['KEY_1', 'KEY_2', 'KEY_3', 'KEY_4', 'KEY_5', 'KEY_6', 'KEY_7', 'KEY_8', 'KEY_9', 'KEY_0', 'KEY_102ND'];
+    var arrowpad = ['KEY_UP', 'KEY_LEFT', 'KEY_OK', 'KEY_RIGHT', 'KEY_DOWN'];
+    var chvolpad = ['KEY_CHANNELUP', 'KEY_MUTE', 'KEY_VOLUMEUP', 'KEY_CHANNELDOWN', 'KEY_VOLUMEDOWN'];
+    var rgybpad = ['KEY_R', 'KEY_G', 'KEY_B', 'KEY_Y', 'KEY_RED', 'KEY_GREEN', 'KEY_BLUE', 'KEY_YELLOW'];
+    var playpad = ['KEY_PREVIOUS', 'KEY_PLAYPAUSE', 'KEY_FORWARD', 'KEY_REWIND', 'KEY_STOP', 'KEY_FASTFORWARD', 'KEY_PLAY', 'KEY_PAUSE', 'KEY_RECORD'];
     function relay_inserter(baseObj, url, relay_info, plate_name) {
       var splits = url.split('/');
       var plate_num = splits[splits.length-3];
       var relay_num = splits[splits.length-2];
       var plate_id = "plate_" + plate_num;
       var my_id = "plate_" + plate_num + "_relay_" + relay_num;
-      baseObj = baseObj.replace(/baseid/g, my_id); 
+      baseObj = baseObj.replace(/baseid/g, my_id);
       baseObj = baseObj.replace(/baseurl/g, url);
       baseObj = baseObj.replace(/basestate/g, relay_info['state']);
       baseObj = baseObj.replace(/relayname/g, relay_info['name']);
       var plate_obj = document.getElementById(plate_id);
       if(plate_obj == null) {
-        document.getElementById("plates").innerHTML = document.getElementById("plates").innerHTML + "<div id=" + plate_id + " class=\"plate\"><span class=\"plate\">" + plate_name + "</span></div>";
+        document.getElementById("plates").innerHTML = document.getElementById("plates").innerHTML + "<div id=" + plate_id + " class=\"plate\"><h2>" + plate_name + "</h2></div>";
       }
       var obj = document.getElementById(my_id);
       if(obj == null){
@@ -87,15 +113,108 @@
       baseObj = baseObj.replace(/buttonname/g, button_name);
       var remote_obj = document.getElementById(remote_id);
       if(remote_obj == null) {
-        document.getElementById("remotes").innerHTML = document.getElementById("remotes").innerHTML + "<div id=" + remote_id + " class=\"remote\"><span class=\"remote\">" + remote_name + "</span></div>";
+        document.getElementById("remotes").innerHTML = document.getElementById("remotes").innerHTML + "<div id=" + remote_id + " class=\"remote\"><h2>" + remote_name + "</h2></div>";
+        remote_obj = document.getElementById(remote_id);
       }
-      var obj = document.getElementById(button_id);
-      if(obj == null){
-        document.getElementById(remote_id).innerHTML = document.getElementById(remote_id).innerHTML + baseObj;
+      if(['KEY_POWER'].indexOf(button_lirc_id) >= 0) {
+        var powerpad_div = remote_obj.getElementsByClassName('powerpad')[0];
+        if(powerpad_div == null) {
+          powerpad_div = document.createElement("div");
+          powerpad_div.classList.add('powerpad');
+          remote_obj.insertBefore(powerpad_div, remote_obj.childNodes[1]);
+        }
+        powerpad_div.innerHTML += baseObj;
+        setTimeout(button_sorter, 0, remote_name, powerpad, 'powerpad');
+      } else if(numpad.indexOf(button_lirc_id) >= 0) {
+        var numpad_div = remote_obj.getElementsByClassName('numpad')[0];
+        var powerpad_div = remote_obj.getElementsByClassName('powerpad')[0];
+        if(numpad_div == null) {
+          numpad_div = document.createElement("div");
+          numpad_div.classList.add('numpad');
+          if(powerpad_div == null) {
+            remote_obj.appendChild(numpad_div);
+          } else {
+            remote_obj.insertBefore(numpad_div, powerpad_div.nextSibling);
+          }
+        }
+        numpad_div.innerHTML += baseObj;
+        setTimeout(button_sorter, 0, remote_name, numpad, 'numpad');
+      } else if(arrowpad.indexOf(button_lirc_id) >= 0) {
+        var arrowpad_div = remote_obj.getElementsByClassName('arrowpad')[0];
+        var numpad_div = remote_obj.getElementsByClassName('numpad')[0];
+        if(arrowpad_div == null) {
+          arrowpad_div = document.createElement('div');
+          arrowpad_div.classList.add('arrowpad');
+          if(numpad_div == null) {
+            remote_obj.appendChild(arrowpad_div);
+          } else {
+            remote_obj.insertBefore(arrowpad_div, numpad_div.nextSibling);
+          }
+        }
+        arrowpad_div.innerHTML += baseObj;
+        setTimeout(button_sorter, 0, remote_name, arrowpad, 'arrowpad');
+      } else if(chvolpad.indexOf(button_lirc_id) >= 0) {
+        var chvolpad_div = remote_obj.getElementsByClassName('chvolpad')[0];
+        var arrowpad_div = remote_obj.getElementsByClassName('arrowpad')[0];
+        if(chvolpad_div == null) {
+          chvolpad_div = document.createElement('div');
+          chvolpad_div.classList.add('chvolpad');
+          if(arrowpad_div == null) {
+            remote_obj.appendChild(chvolpad_div);
+          } else {
+            remote_obj.insertBefore(chvolpad_div, arrowpad_div.nextSibling);
+          }
+        }
+        chvolpad_div.innerHTML += baseObj;
+        setTimeout(button_sorter, 0, remote_name, chvolpad, 'chvolpad');
+      } else if(rgybpad.indexOf(button_lirc_id) >= 0) {
+        var rgybpad_div = remote_obj.getElementsByClassName('rgybpad')[0];
+        var chvolpad_div = remote_obj.getElementsByClassName('chvolpad')[0];
+        if(rgybpad_div == null) {
+          rgybpad_div = document.createElement('div');
+          rgybpad_div.classList.add('rgybpad');
+          if(chvolpad_div == null) {
+            remote_obj.appendChild(rgybpad_div);
+          } else {
+            remote_obj.insertBefore(rgybpad_div, chvolpad_div.nextSibling);
+          }
+        }
+        rgybpad_div.innerHTML += baseObj;
+        setTimeout(button_sorter, 0, remote_name, rgybpad, 'rgybpad');
+      } else if(playpad.indexOf(button_lirc_id) >= 0) {
+        var playpad_div = remote_obj.getElementsByClassName('playpad')[0];
+        var rgybpad_div = remote_obj.getElementsByClassName('rgybpad')[0];
+        if(playpad_div == null) {
+          playpad_div = document.createElement('div');
+          playpad_div.classList.add('playpad');
+          if(rgybpad_div == null) {
+            remote_obj.appendChild(playpad_div);
+          } else {
+            remote_obj.insertBefore(playpad_div, rgybpad_div.nextSibling);
+          }
+        }
+        playpad_div.innerHTML += baseObj;
+        setTimeout(button_sorter, 0, remote_name, playpad, 'playpad');
       } else {
-        obj.parentNode.replaceChild(baseObj, obj);
+        var otherpad_div = remote_obj.getElementsByClassName('otherpad')[0];
+        var playpad_div = remote_obj.getElementsByClassName('playpad')[0];
+        if(otherpad_div == null) {
+          otherpad_div = document.createElement('div');
+          otherpad_div.classList.add('otherpad');
+          if(playpad_div == null) {
+            remote_obj.appendChild(otherpad_div);
+          } else {
+            remote_obj.insertBefore(otherpad_div, playpad_div.nextSibling);
+          }
+        }
+        otherpad_div.innerHTML += baseObj;
       }
-      document.getElementById(button_id).className = "remote_button remote_button_" + button_lirc_id;
+      var btn = document.getElementById(button_id)
+      if(btn != null) {
+        btn.classList.add("remote_button");
+        btn.classList.add(button_lirc_id);
+      }
+      return remote_name;
     }
     function change_relay_state(url, my_id) {
       loadJSON(url, function(jsonObj){
@@ -107,36 +226,90 @@
     function press_remote_button(url, my_id) {
       loadJSON(url, function(json){});
     }
-    // Get list of plates
-    loadJSON('/api/v1/plate', function(jsonObj){
+    function remote_sort(a, b) {
+      var aord = a.id;
+      var bord = b.id;
+      return (aord > bord) ? 1 : -1;
+    }
+    function reorder_remotes() {
+      var remotes_unsorted = document.getElementById('remotes').children;
+      remotes_unsorted = Array.prototype.slice.call(remotes_unsorted, 0);
+      remotes_unsorted.sort(remote_sort);
+      var remote_div = document.getElementById('remotes');
+      remote_div.innerHTML = "";
+      for(var i = 0; i < remotes_unsorted.length; i++) {
+        remote_div.appendChild(remotes_unsorted[i]);
+      }
+    }
+    function button_sorter(remote_name, sorted_list, class_to_sort) {
+      var remote_obj = document.getElementById('remote_' + remote_name);
+      if(remote_obj != null) {
+        var container_div = remote_obj.getElementsByClassName(class_to_sort)[0];
+        if(container_div != null) {
+          var container_children = Array.prototype.slice.call(container_div.children, 0);
+          container_children.sort(function button_sort(a, b) {
+            var aord = 0, bord = 0;
+            for(var ci in a.classList) {
+              var mystr = a.classList[ci];
+              if(sorted_list.indexOf(mystr) > 0) {
+                aord = sorted_list.indexOf(mystr);
+              }
+            }
+            for(var ci in b.classList) {
+              var mystr = b.classList[ci];
+              if(sorted_list.indexOf(mystr) > 0) {
+                bord = sorted_list.indexOf(mystr);
+              }
+            }
+            return (aord > bord) ? 1 : -1;
+          });
+          container_div.innerHTML = "";
+          for(var i = 0; i < container_children.length; i++) {
+            container_div.appendChild(container_children[i]);
+          }
+        }
+      }
+    }
+    function handle_relay_plate(jsonObj) {
+      var plate_name = jsonObj['name'];
+      // for each relay, insert it into the dom
+      for(key in jsonObj) {
+        if(key != 'name'){
+          setTimeout(relay_inserter, 0, baseRelayObj, key, jsonObj[key], plate_name);
+        }
+      }
+    }
+    function handle_relay_plates(jsonObj) {
       // for each plate, load the relays
       for(var key in jsonObj) {
-        loadJSON(key, function(myobj) {
-          var plate_name = myobj['name'];
-          // for each relay, insert it into the dom
-          for(new_key in myobj) {
-            if(new_key != 'name'){
-              relay_inserter(baseRelayObj, new_key, myobj[new_key], plate_name);
-            }
-          }
-        });
+        loadJSON(key, handle_relay_plate);
       }
-    });
-    // Get list of remote
-    loadJSON('/api/v1/ir/remote', function(jsonObj){
+    }
+    // Get list of plates
+    loadJSON('/api/v1/plate/', handle_relay_plates);
+    function handle_remote(jsonObj) {
+          var remote_name;
+          // for each button, insert it into the dom
+          var keys = Object.keys(jsonObj);
+          keys.sort();
+          for(ki in keys){
+            setTimeout(remote_button_inserter, 0, baseRemoteButtonObj, keys[ki], jsonObj[keys[ki]]);
+          }
+          // Sort the remotes by name.
+          setTimeout(reorder_remotes, 0);
+    }
+    function handle_remotes(jsonObj) {
       // for each remote, load the buttons
       for(var key in jsonObj) {
-        loadJSON(key, function(remotedef) {
-          // for each button, insert it into the dom
-          for(button in remotedef){
-            remote_button_inserter(baseRemoteButtonObj, button, remotedef[button]);
-          }
-        });
+        loadJSON(key, handle_remote);
       }
-    });
+    }
+    // Get list of remote
+    loadJSON('/api/v1/ir/remote/', handle_remotes);
   </script>
   <h1>Relay Controls</h1>
   <div id="plates"></div>
+  <h1>Remotes</h1>
   <div id="remotes"></div>
   </body>
 </html>
