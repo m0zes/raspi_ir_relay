@@ -344,7 +344,7 @@ def get_list_of_macros():
 def get_macro_definition(macro_name):
     macrolist = get_list_of_macros()
     macro_fn = "{}.json".format(macro_name)
-    if macro_fn not in macrolist:
+    if macro_name not in macrolist:
         raise Exception("Macro undefined")
     with open(os.path.join(MACRO_CONF_DIR, macro_fn), 'r') as f:
         return json.load(f)
