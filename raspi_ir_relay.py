@@ -90,7 +90,15 @@ def get_list_of_relay_plates():
     return plates
 
 
+def setup_relay_plate_dir():
+    if not os.path.exists(PLATE_CONF_DIR):
+        os.mkdir(PLATE_CONF_DIR)
+    elif not os.path.isdir(PLATE_CONF_DIR):
+        raise Exception("Incorrect PLATE_CONF_DIR configuration")
+
+
 def load_relay_plate_conf(plate_num):
+    setup_relay_plate_dir()
     plate_fn = os.path.join(PLATE_CONF_DIR, "plate_{}.json".format(plate_num))
     if not os.path.exists(plate_fn) or not os.path.isfile(plate_fn):
         plate_conf = {"name": "plate_{}".format(plate_num)}
@@ -104,8 +112,7 @@ def load_relay_plate_conf(plate_num):
 
 
 def save_relay_plate_conf(plate_num, plate_conf):
-    if not os.path.exists(PLATE_CONF_DIR):
-        os.mkdir(PLATE_CONF_DIR)
+    setup_relay_plate_dir()
     plate_fn = os.path.join(PLATE_CONF_DIR, "plate_{}.json".format(plate_num))
     with open(plate_fn, 'w') as f:
         json.dump(plate_conf, f)
@@ -317,11 +324,15 @@ def press_ir_button(remote, button):
         raise Exception(stderr)
 
 
-def get_list_of_macros():
+def setup_macro_conf_dir():
     if not os.path.exists(MACRO_CONF_DIR):
         os.mkdir(MACRO_CONF_DIR)
     elif not os.path.isdir(MACRO_CONF_DIR):
         raise Exception("Incorrect MACRO_CONF_DIR configuration")
+
+
+def get_list_of_macros():
+    setup_macro_conf_dir()
     macros = []
     for item in os.listdir(MACRO_CONF_DIR):
         if '.json' not in item:
@@ -340,6 +351,7 @@ def get_macro_definition(macro_name):
 
 
 def set_macro_definition(macro_json, macro_name=None):
+    setup_macro_conf_dir()
     ds_name = macro_json.keys()[0]
     if macro_name is None:
         macro_name = ds_name
@@ -349,6 +361,7 @@ def set_macro_definition(macro_json, macro_name=None):
 
 
 def remove_macro_definition(macro_name):
+    setup_macro_conf_dir()
     os.remove(os.path.join(
         MACRO_CONF_DIR,
         "{}.json".format(macro_name)
@@ -523,7 +536,8 @@ def api_v1_ir_macro_name(macro_name, state=None):
         return make_response(jsonify(err="State is invalid"), 403)
     if state in ['pressed', 'on']:
         for url in macro:
-            func, args = flask_from_url.from_url(url)
+            func, args = flask_from_url.route_from(url)
+            func = eval(func)
             func(**args)
     formatted_macro = {}
     formatted_macro[macro_name] = macro
