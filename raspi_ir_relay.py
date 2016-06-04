@@ -52,11 +52,40 @@ REMOTE_CONF_DIR = 'remotes'
 MACRO_CONF_DIR = 'macros'
 PLATE_CONF_DIR = 'plates'
 LIRC_DEVICE = '/dev/lirc0'
+IP_ADDRESS = "0.0.0.0"
+PORT = 5000
+REGISTER_ZEROCONF = True
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('RASPI_IR_RELAY_SETTINGS', silent=True)
 socketio = SocketIO(app)
+
+if REGISTER_ZEROCONF:
+    import socket
+    try:
+        from zeroconf import ServiceInfo, Zeroconf
+        if socket.getfqdn() == socket.gethostname():
+            FQDN = socket.gethostname() + ".local"
+        else:
+            FQDN = socket.getfqdn()
+    except ImportError:
+        print("Couldn't import ZeroConf Services")
+        REGISTER_ZEROCONF = False
+
+if REGISTER_ZEROCONF and IP_ADDRESS != "0.0.0.0":
+    ZC_IP_ADDRESS = IP_ADDRESS
+else:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 0))
+        ZC_IP_ADDRESS = s.getsockname()[0]
+    except Exception as ex:
+        print(str(ex))
+        print("Unfortunately we weren't able to determine a local IP")
+        print("address for Zeroconf registration. Please specify one")
+        print("in the configuration file.")
+        REGISTER_ZEROCONF = False
 
 irrecord_proc = None
 irrecord_sender_thread = None
@@ -637,4 +666,21 @@ def wss_send_button(message):
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0')
+    if REGISTER_ZEROCONF:
+        info = ServiceInfo("_http._tcp.local.",
+            socket.gethostname() + "._http._tcp.local.",
+            address=socket.inet_aton(ZC_IP_ADDRESS), port=PORT,
+            properties={'path': '/', 'api-type': 'raspi-ir-relay'},
+            server=FQDN)
+        zeroconf = Zeroconf()
+        try:
+            zeroconf.register_service(info)
+        except Exception as ex:
+            print(ex)
+    socketio.run(app, host=IP_ADDRESS, port=PORT)
+    if REGISTER_ZEROCONF:
+        try:
+            zeroconf.unregister_service(info)
+            zeroconf.close()
+        except Exception as ex:
+            print(ex)
