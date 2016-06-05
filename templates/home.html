@@ -45,8 +45,9 @@
       .relay_on {background-color: green;}
       .relay_off {background-color: red;}
       .plate, #remotes, .remote, .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {display: flex; flex-flow: row wrap;}
-      .relay, .remote_button, .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {flex-grow: 1; flex-shrink: 0; margin: auto;}
-      .relay, .remote_button {border-style: solid; text-align:center; font-size: 0.85em}
+      .relay, .remote_button, .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {flex-grow: 1; flex-shrink: 0; margin: auto; display: flex;}
+      .relay, .remote_button {height: 2em; border-style: solid; font-size: 0.85em; justify-content: center; align-items: center;}
+      a {color: #000000; text-decoration: none;}
       @media (min-width: 700px) {
         .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
         .remote {width: 50%;}
@@ -75,8 +76,8 @@
   </head>
   <body id=body>
   <script>
-    var baseRelayObj = "<div id=baseid onclick=\"javascript:change_relay_state(\'baseurltoggle\', \'baseid\')\">relayname: basestate</div>";
-    var baseRemoteButtonObj = "<div id=baseid onclick=\"javascript:press_remote_button(\'baseurlon\', \'baseid\')\">buttonname</div>";
+    var baseRelayObj = "<a id=baseid href=\"javascript:change_relay_state(\'baseurltoggle\', \'baseid\')\">relayname: basestate</a>";
+    var baseRemoteButtonObj = "<a id=baseid href=\"javascript:press_remote_button(\'baseurlon\', \'baseid\')\">buttonname</a>";
     var powerpad = ['KEY_POWER'];
     var numpad = ['KEY_1', 'KEY_2', 'KEY_3', 'KEY_4', 'KEY_5', 'KEY_6', 'KEY_7', 'KEY_8', 'KEY_9', 'KEY_0', 'KEY_102ND'];
     var arrowpad = ['KEY_UP', 'KEY_LEFT', 'KEY_OK', 'KEY_RIGHT', 'KEY_DOWN'];
