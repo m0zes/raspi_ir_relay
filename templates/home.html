@@ -48,29 +48,21 @@
       .relay, .remote_button, .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {flex-grow: 1; flex-shrink: 0; margin: auto; display: flex;}
       .relay, .remote_button {height: 2em; border-style: solid; font-size: 0.85em; justify-content: center; align-items: center;}
       a {color: #000000; text-decoration: none;}
+      .remote_button {width: calc(100% * (1/3) - 11px);}
+      .KEY_RED, .KEY_R, .KEY_BLUE, .KEY_B, .KEY_GREEN, .KEY_G, .KEY_YELLOW, .KEY_Y {width: calc(100% * (1/4) - 11px);}
+      .KEY_UP, .KEY_DOWN {width: calc(100% - 11px);}
+      .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
       @media (min-width: 700px) {
-        .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
         .remote {width: 50%;}
         .relay {width: calc(100% * (1/3) - 11px);}
-        .remote_button {width: calc(100% * (1/3) - 11px);}
-        .KEY_RED, .KEY_R, .KEY_BLUE, .KEY_B, .KEY_GREEN, .KEY_G, .KEY_YELLOW, .KEY_Y {width: calc(100% * (1/4) - 11px);}
-        .KEY_UP, .KEY_DOWN {width: calc(100% - 11px);}
       }
       @media (min-width: 1200px) {
-        .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
         .remote {width: calc(100% * (1/3));}
         .relay {width: calc(100% * (1/8) - 11px);}
-        .remote_button {width: calc(100% * (1/3) - 11px);}
-        .KEY_RED, .KEY_R, .KEY_BLUE, .KEY_B, .KEY_GREEN, .KEY_G, .KEY_YELLOW, .KEY_Y {width: calc(100% * (1/4) - 11px);}
-        .KEY_UP, .KEY_DOWN {width: calc(100% - 11px);}
       }
       @media (max-width: 700px) {
-        .otherpad, .powerpad, .numpad, .rgybpad, .arrowpad, .chvolpad, .playpad {width: 100%;}
         .remote {width: 100%;}
         .relay {width: 100%;}
-        .remote_button {width: calc(100% * (1/3) - 11px);}
-        .KEY_RED, .KEY_R, .KEY_BLUE, .KEY_B, .KEY_GREEN, .KEY_G, .KEY_YELLOW, .KEY_Y {width: calc(100% - 11px);}
-        .KEY_UP, .KEY_DOWN {width: calc(100% * (1/4) - 11px);}
       }
     </style>
   </head>
@@ -106,10 +98,9 @@
       }
       document.getElementById(my_id).className = "relay relay_" + relay_info['state'];
     }
-    function remote_button_inserter(baseObj, button_url, button_name) {
+    function remote_button_inserter(remote_name, baseObj, button_url, button_name) {
       var splits = button_url.split('/');
       var button_lirc_id = splits[splits.length-2];
-      var remote_name = splits[splits.length-3];
       var remote_id = "remote_" + remote_name;
       var button_id = remote_id + "_button_" + button_lirc_id;
       baseObj = baseObj.replace(/baseid/g, button_id);
@@ -218,7 +209,6 @@
         btn.classList.add("remote_button");
         btn.classList.add(button_lirc_id);
       }
-      return remote_name;
     }
     function change_relay_state(url, my_id) {
       loadJSON(url, function(jsonObj){
@@ -292,12 +282,14 @@
     // Get list of plates
     loadJSON('/api/v1/plate/', handle_relay_plates);
     function handle_remote(jsonObj) {
-          var remote_name;
+          var remote_name = jsonObj['name'];
           // for each button, insert it into the dom
           var keys = Object.keys(jsonObj);
           keys.sort();
           for(ki in keys){
-            setTimeout(remote_button_inserter, 0, baseRemoteButtonObj, keys[ki], jsonObj[keys[ki]]);
+            if (keys[ki] != 'name') {
+              setTimeout(remote_button_inserter, 0, remote_name, baseRemoteButtonObj, keys[ki], jsonObj[keys[ki]]);
+            }
           }
           // Sort the remotes by name.
           setTimeout(reorder_remotes, 0);

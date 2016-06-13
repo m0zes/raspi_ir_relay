@@ -436,7 +436,7 @@ def api_v1_plate():
         endpoints[url_for(
             'api_v1_plate_num',
             plate_num=relay_plate
-        )] = relay_plate
+        )] = load_relay_plate_conf(relay_plate)['name']
     return jsonify(**endpoints)
 
 
@@ -617,6 +617,7 @@ def api_v1_ir_remote_remote_name(remote):
             remote=remote,
             button=button[0]
         )] = button[1]
+    buttons['name'] = remote
     return jsonify(**buttons)
 
 
