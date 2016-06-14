@@ -616,7 +616,7 @@ def api_v1_ir_remote_remote_name(remote):
             'api_v1_ir_remote_remote_button',
             remote=remote,
             button=button[0]
-        )] = button[1]
+        )] = {'button': button[0], 'name': button[1]}
     buttons['name'] = remote
     return jsonify(**buttons)
 
