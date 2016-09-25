@@ -147,6 +147,19 @@ def save_relay_plate_conf(plate_num, plate_conf):
         json.dump(plate_conf, f)
 
 
+def initial_relay_state():
+    initial_fn = os.path.join(PLATE_CONF_DIR, "initial_state.json")
+    if not os.path.exists(initial_fn) or not os.path.isfile(initial_fn):
+        return
+    with open(initial_fn, 'r') as f:
+        initial_state = json.load(f)
+    for i_plate_conf in initial_state.items():
+        curr_state = get_state_of_relays_on_plate(int(i_plate_conf[0]))
+        for relay in i_plate_conf[1].keys():
+            if i_plate_conf[1][relay] != curr_state[int(relay)]:
+                toggle_state_of_relay(int(i_plate_conf[0]), int(relay))
+
+
 def get_state_of_relays_on_plate(plate_num):
     if RELAY.getADDR(plate_num) != plate_num:
         raise Exception("Plate Number is invalid")
@@ -667,6 +680,7 @@ def wss_send_button(message):
 
 
 if __name__ == '__main__':
+    initial_relay_state()
     if REGISTER_ZEROCONF:
         info = ServiceInfo("_http._tcp.local.",
             socket.gethostname() + "._http._tcp.local.",
